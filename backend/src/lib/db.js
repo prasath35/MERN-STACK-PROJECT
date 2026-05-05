@@ -10,8 +10,6 @@ export async function connectDB() {
     return mongoose;
   }
 
-  return mongoose.connect(ENV.DB_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  return mongoose.connect(ENV.DB_URL);
 }
+
