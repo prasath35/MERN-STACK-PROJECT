@@ -1,8 +1,9 @@
 import express from "express";
 import { ENV } from "./lib/env.js";
 import cors from "cors";
-import {serve} from "inngest/express";
-
+import { serve } from "inngest/express";
+import { connectDB } from "./lib/db.js";
+import { inngest, functions } from "./lib/inngest.js";
 
 const app = express();
 
@@ -17,10 +18,17 @@ app.use(express.json());
 app.use(cors({origin: ENV.CLIENT_URL,credentials:true}));
 
 
-app.use("/api/inngest", serve({client:inngest, fucntions}));
+app.use("/api/inngest", serve({ client: inngest, functions }));
 
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "api is up and running" });
 });
 
-app.listen(PORT, () => console.log("server is running on port " + PORT));
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => console.log("server is running on port " + PORT));
+  })
+  .catch((error) => {
+    console.error("Failed to connect to DB:", error);
+    process.exit(1);
+  });
