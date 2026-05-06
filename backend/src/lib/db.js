@@ -6,8 +6,29 @@ export async function connectDB() {
     throw new Error("Missing DB_URL in environment configuration.");
   }
 
-  if (mongoose.connection.readyState === 1) {
+  // readyState: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  const readyState = mongoose.connection.readyState;
+  
+  if (readyState === 1) {
+    // Already connected
     return mongoose;
+  }
+  
+  if (readyState === 2) {
+    // Currently connecting, wait for it
+    return new Promise((resolve, reject) => {
+      const checkConnection = setInterval(() => {
+        if (mongoose.connection.readyState === 1) {
+          clearInterval(checkConnection);
+          resolve(mongoose);
+        }
+      }, 100);
+      
+      setTimeout(() => {
+        clearInterval(checkConnection);
+        reject(new Error("Connection timeout"));
+      }, 30000);
+    });
   }
 
   return mongoose.connect(ENV.DB_URL);
