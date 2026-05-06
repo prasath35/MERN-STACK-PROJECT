@@ -1,12 +1,15 @@
-console.log("🔥 DB FILE EXECUTED");
 import mongoose from "mongoose";
+import { ENV } from "./env.js";
 
-export const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-
-    console.log("✅ MongoDB connected");
-  } catch (error) {
-    console.error("❌ MongoDB error:", error.message);
+export async function connectDB() {
+  if (!ENV.DB_URL) {
+    throw new Error("Missing DB_URL in environment configuration.");
   }
-};
+
+  if (mongoose.connection.readyState === 1) {
+    return mongoose;
+  }
+
+  return mongoose.connect(ENV.DB_URL);
+}
+
