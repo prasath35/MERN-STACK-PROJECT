@@ -1,6 +1,6 @@
 import { Inngest } from "inngest";
 import { connectDB } from "./db.js";
-import user from "../models/user.js";
+import User from "../models/user.js";
 
 export const inngest = new Inngest({ id: "interview-app" });
 
@@ -18,21 +18,21 @@ const syncUser = inngest.createFunction(
       profileImage: image_url,
     };
 
-    await user.create(newUser);
+    await User.findOneAndUpdate(
+      { clerkId: id },
+      newUser,
+      { upsert: true, new: true, runValidators: true }
+    );
   }
-)
-
-
+);
 
 const deleteUserfromDB = inngest.createFunction(
-  { id: "delete-user-from-DB" },
+  { id: "delete-user-from-db" },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
-    // const { name,email,profileImage,clerkId } = event.data;
     await connectDB();
-
     const { id } = event.data;
-    await user.deleteOne({ clerkId: id });
+    await User.deleteOne({ clerkId: id });
   }
 );
 
