@@ -1,44 +1,41 @@
-import express from "express";
-import { ENV } from "./lib/env.js";
-import cors from "cors";
-import { serve } from "inngest/express";
-import { connectDB } from "./lib/db.js";
-import { inngest, functions } from "./lib/inngest.js";
-import userRoutes from "./routes/userRoutes.js";
+import { Inngest } from "inngest";
+import { connectDB } from "./db.js";
+import User from "../models/user.js";
 
-const app = express();
-const PORT = process.env.PORT || ENV.PORT || 3000;
-const CLIENT_URL = ENV.CLIENT_URL || "http://localhost:5173";
+export const inngest = new Inngest({ id: "interview-app" });
 
-// middleware
-app.use(express.json());
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+// ✅ USER CREATED
+const syncUser = inngest.createFunction(
+  { id: "sync-user", triggers: [{ event: "clerk/user.created" }] },
+  async ({ event }) => {
+    await connectDB();
 
-app.use("/api/inngest", serve({ client: inngest, functions }));
-app.use("/api/users", userRoutes);
+    const { id, email_addresses, first_name, last_name, image_url } =
+      event.data;
 
-app.get("/health", (req, res) => {
-  res.status(200).json({ message: "api is up and running" });
-});
+    const newUser = {
+      clerkId: id,
+      email: email_addresses?.[0]?.email_address ?? "",
+      name: `${first_name || ""} ${last_name || ""}`.trim(),
+      profileImage: image_url,
+    };
 
-app.get("/Video-Calls", (req, res) => {
-  res.status(200).json({ message: "Video Call endpoint" });
-});
+    await User.findOneAndUpdate({ clerkId: id }, newUser, {
+      upsert: true,
+      new: true,
+    });
+  }
+);
 
+// ✅ USER DELETED
+const deleteUserfromDB = inngest.createFunction(
+  { id: "delete-user-from-db", triggers: [{ event: "clerk/user.deleted" }] },
+  async ({ event }) => {
+    await connectDB();
+    const { id } = event.data;
 
-app.use((error, req, res, next) => {
-  console.error(error);
-  res.status(error.status || 500).json({
-    error: error.message || "Internal Server Error",
-  });
-});
+    await User.deleteOne({ clerkId: id });
+  }
+);
 
-// ✅ ONLY ONE DB CONNECTION
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => console.log("server is running on port " + PORT));
-  })
-  .catch((error) => {
-    console.error("Failed to connect to DB:", error);
-    process.exit(1);
-  });
+export const functions = [syncUser, deleteUserfromDB];
