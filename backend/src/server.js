@@ -18,8 +18,13 @@ app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/users", userRoutes);
 
 app.get("/health", (req, res) => {
-  res.json({ message: "api is up and running" });
+  res.status(200).json({ message: "api is up and running" });
 });
+
+app.get("/Video-Calls", (req, res) => {
+  res.status(200).json({ message: "Video Call endpoint" });
+});
+
 
 app.use((error, req, res, next) => {
   console.error(error);
