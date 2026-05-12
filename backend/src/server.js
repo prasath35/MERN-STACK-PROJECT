@@ -5,6 +5,7 @@ import { serve } from "inngest/express";
 
 import { connectDB } from "./lib/db.js";
 import { inngest, functions } from "./lib/inngest.js";
+import User from "./models/user.js";
 
 dotenv.config();
 
@@ -22,6 +23,21 @@ app.get("/", (req, res) => {
 // Health Route
 app.get("/health", (req, res) => {
   res.send("Health is good");
+});
+
+// Get Users Route
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find();
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      message: "Failed to fetch users",
+    });
+  }
 });
 
 // Inngest Route
