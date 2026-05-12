@@ -1,42 +1,26 @@
-import { Inngest } from "inngest";
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
 import { connectDB } from "./lib/db.js";
-import User from "./models/user.js";
 
-export const inngest = new Inngest({ id: "interview-app" });
+dotenv.config();
 
-// USER CREATED
-const syncUser = inngest.createFunction(
-  { id: "sync-user", triggers: [{ event: "clerk/user.created" }] },
-  async ({ event }) => {
-    await connectDB();
+const app = express();
 
-    const { id, email_addresses, first_name, last_name, image_url } =
-      event.data;
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-    const newUser = {
-      clerkId: id,
-      email: email_addresses?.[0]?.email_address ?? "",
-      name: `${first_name || ""} ${last_name || ""}`.trim(),
-      profileImage: image_url,
-    };
+// Route
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
 
-    await User.findOneAndUpdate({ clerkId: id }, newUser, {
-      upsert: true,
-      new: true,
-    });
-  }
-);
+// Connect DB
+connectDB();
 
-// USER DELETED
-const deleteUserfromDB = inngest.createFunction(
-  { id: "delete-user-from-db", triggers: [{ event: "clerk/user.deleted" }] },
-  async ({ event }) => {
-    await connectDB();
+const PORT = process.env.PORT || 5000;
 
-    const { id } = event.data;
-
-    await User.deleteOne({ clerkId: id });
-  }
-);
-
-export const functions = [syncUser, deleteUserfromDB];
+app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
+});
