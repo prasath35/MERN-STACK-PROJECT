@@ -11,10 +11,12 @@ const syncUser = inngest.createFunction(
   {
     id: "sync-user",
     trigger: {
-      event: "clerk/user.created",
+      event: "user.created",
     },
   },
   async ({ event }) => {
+    console.log("EVENT RECEIVED:", event);
+
     await connectDB();
 
     const { id, email_addresses, first_name, last_name, image_url } =
@@ -43,10 +45,12 @@ const deleteUserfromDB = inngest.createFunction(
   {
     id: "delete-user-from-db",
     trigger: {
-      event: "clerk/user.deleted",
+      event: "user.deleted",
     },
   },
   async ({ event }) => {
+    console.log("DELETE EVENT:", event);
+
     await connectDB();
 
     const { id } = event.data;
